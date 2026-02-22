@@ -258,7 +258,18 @@ async function getOrdersFromDB() {
         return [];
     }
     
-    return data || [];
+    // 데이터 변환
+return data.map(o => ({
+    id: o.id,
+    name: o.name || o.user_id,  // name 없으면 user_id 표시
+    phone: o.phone || '-',       // phone 없으면 '-' 표시
+    orderDate: o.order_date,     // camelCase 변환
+    plan: o.plan,
+    planCount: o.plan_count,     // camelCase 변환
+    pickupType: o.pickup_type,   // camelCase 변환
+    totalPrice: o.total_price,   // camelCase 변환
+    ...
+}));
 }
 
 // 주문 상태 업데이트

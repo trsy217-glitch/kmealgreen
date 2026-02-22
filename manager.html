@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>건밀그린 메뉴 관리</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:sans-serif;background:#0F1117;color:#F1F5F9;padding:20px;}
+.container{max-width:1200px;margin:0 auto;}
+h1{color:#4ADE80;margin-bottom:30px;}
+.tabs{display:flex;gap:10px;margin-bottom:30px;border-bottom:2px solid #252A3D;padding-bottom:10px;}
+.tab{padding:10px 20px;background:#181B24;border:1px solid #252A3D;border-radius:8px 8px 0 0;cursor:pointer;color:#94A3B8;transition:all 0.3s;}
+.tab:hover{background:#1F2333;color:#F1F5F9;}
+.tab.active{background:#4ADE80;color:#0F1117;border-color:#4ADE80;}
+.page{display:none;}
+.page.active{display:block;}
+.btn{padding:10px 20px;background:#4ADE80;color:#0F1117;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;}
+.btn:hover{background:#22C55E;}
+.btn-danger{background:#F87171;color:white;}
+.btn-danger:hover{background:#EF4444;}
+table{width:100%;background:#181B24;border-radius:12px;overflow:hidden;border-collapse:collapse;}
+th{background:#1F2333;padding:15px;text-align:left;color:#64748B;font-size:12px;text-transform:uppercase;}
+td{padding:15px;border-bottom:1px solid #252A3D;color:#F1F5F9;}
+tr:hover td{background:#1F2333;}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);justify-content:center;align-items:center;z-index:1000;}
+.modal.active{display:flex;}
+.modal-content{background:#181B24;padding:30px;border-radius:16px;max-width:500px;width:90%;border:1px solid #252A3D;}
+.modal-content h2{color:#4ADE80;margin-bottom:20px;}
+.form-group{margin-bottom:20px;}
+.form-group label{display:block;margin-bottom:8px;color:#94A3B8;font-size:14px;font-weight:600;}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:12px;background:#0F1117;border:1px solid #252A3D;border-radius:8px;color:#F1F5F9;font-family:inherit;font-size:14px;}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:#4ADE80;}
+.btn-group{display:flex;gap:10px;margin-top:20px;}
+.meal-card{background:#181B24;padding:20px;border-radius:12px;margin-bottom:15px;border:1px solid #252A3D;}
+.meal-card h3{color:#4ADE80;margin-bottom:10px;}
+.meal-card p{color:#94A3B8;margin:5px 0;}
+.msg{padding:12px;border-radius:8px;margin-bottom:20px;display:none;}
+.msg.success{background:rgba(74,222,128,0.1);border:1px solid #4ADE80;color:#4ADE80;}
+.msg.error{background:rgba(248,113,113,0.1);border:1px solid #F87171;color:#F87171;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🥗 건밀그린 메뉴 관리</h1>
+  
+  <div id="msg" class="msg"></div>
+  
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('menu')">📋 메뉴 관리</div>
+    <div class="tab" onclick="switchTab('meal')">🗓️ 식단 추가</div>
+  </div>
+
+  <div id="menuPage" class="page active">
+    <button class="btn" onclick="openAddMenu()">+ 새 메뉴 추가</button>
+    <br><br>
+    <table>
+      <thead>
+        <tr><th>코드</th><th>메뉴명</th><th>재료</th><th>칼로리</th><th>작업</th></tr>
+      </thead>
+      <tbody id="menuList">
+        <tr><td colspan="5" style="text-align:center;color:#64748B;">로딩 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="mealPage" class="page">
+    <div class="form-group">
+      <label>날짜</label>
+      <input type="date" id="mealDate">
+    </div>
+    <div class="form-group">
+      <label>시간</label>
+      <select id="mealTime">
+        <option value="점심">점심</option>
+        <option value="저녁">저녁</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>메뉴</label>
+      <select id="mealMenu">
+        <option value="">메뉴 선택</option>
+      </select>
+    </div>
+    <div id="menuInfo" class="meal-card" style="display:none;">
+      <h3 id="infoName"></h3>
+      <p id="infoDesc"></p>
+      <p id="infoCalorie"></p>
+    </div>
+    <button class="btn" onclick="addMeal()">식단 저장</button>
+  </div>
+</div>
+
+<div id="addMenuModal" class="modal">
+  <div class="modal-content">
+    <h2>새 메뉴 추가</h2>
+    <div class="form-group">
+      <label>코드 (예: M011)</label>
+      <input type="text" id="code" placeholder="M011">
+    </div>
+    <div class="form-group">
+      <label>이름</label>
+      <input type="text" id="name" placeholder="새우볶음밥">
+    </div>
+    <div class="form-group">
+      <label>재료</label>
+      <textarea id="desc" rows="3" placeholder="새우, 야채, 밥"></textarea>
+    </div>
+    <div class="form-group">
+      <label>칼로리</label>
+      <input type="number" id="calorie" placeholder="450">
+    </div>
+    <div class="btn-group">
+      <button class="btn" onclick="saveMenu()">저장</button>
+      <button class="btn btn-danger" onclick="closeAddMenu()">취소</button>
+    </div>
+  </div>
+</div>
+
+<div id="editMenuModal" class="modal">
+  <div class="modal-content">
+    <h2>메뉴 수정</h2>
+    <input type="hidden" id="editCode">
+    <div class="form-group">
+      <label>이름</label>
+      <input type="text" id="editName">
+    </div>
+    <div class="form-group">
+      <label>재료</label>
+      <textarea id="editDesc" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label>칼로리</label>
+      <input type="number" id="editCalorie">
+    </div>
+    <div class="btn-group">
+      <button class="btn" onclick="saveEdit()">저장</button>
+      <button class="btn btn-danger" onclick="closeEdit()">취소</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const cfg = {
+  url: 'https://tuxsyxywdeecdflgyuib.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eHN5eHl3ZGVlY2RmbGd5dWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzY0NzQsImV4cCI6MjA4NzI1MjQ3NH0.M5JNFHBTiPK5zv3DwBieKn5f8oRdmmRKZO99o0-tUWk'
+};
+
+let db, menus = [];
+
+function init() {
+  console.log('초기화 시작');
+  if (!window.supabase) {
+    alert('Supabase CDN 로드 실패');
+    return;
+  }
+  db = window.supabase.createClient(cfg.url, cfg.key);
+  console.log('Supabase 연결 완료');
+  loadMenus();
+  document.getElementById('mealDate').value = new Date().toISOString().split('T')[0];
+}
+
+async function loadMenus() {
+  console.log('메뉴 로드 중...');
+  try {
+    const {data, error} = await db.from('menu_items').select('*').order('menu_code');
+    if (error) throw error;
+    menus = data || [];
+    console.log('메뉴 개수:', menus.length);
+    renderMenus();
+    updateMealSelect();
+  } catch (e) {
+    console.error('에러:', e);
+    showMsg('메뉴 로드 실패: ' + e.message, 'error');
+    document.getElementById('menuList').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#F87171;">로드 실패: ' + e.message + '</td></tr>';
+  }
+}
+
+function renderMenus() {
+  const html = menus.length === 0 
+    ? '<tr><td colspan="5" style="text-align:center;color:#64748B;">메뉴 없음</td></tr>'
+    : menus.map(m => `
+      <tr>
+        <td><strong>${m.menu_code}</strong></td>
+        <td>${m.menu_name}</td>
+        <td style="color:#94A3B8;font-size:13px;">${m.description||'-'}</td>
+        <td>${m.calorie?m.calorie+' kcal':'-'}</td>
+        <td>
+          <button class="btn" style="padding:5px 10px;font-size:12px;margin-right:5px;" onclick="openEdit('${m.menu_code}')">수정</button>
+          <button class="btn btn-danger" style="padding:5px 10px;font-size:12px;" onclick="delMenu('${m.menu_code}')">삭제</button>
+        </td>
+      </tr>
+    `).join('');
+  document.getElementById('menuList').innerHTML = html;
+}
+
+function updateMealSelect() {
+  document.getElementById('mealMenu').innerHTML = '<option value="">메뉴 선택</option>' +
+    menus.map(m => `<option value="${m.menu_code}">${m.menu_code} - ${m.menu_name}</option>`).join('');
+  
+  document.getElementById('mealMenu').onchange = function() {
+    const m = menus.find(x => x.menu_code === this.value);
+    const info = document.getElementById('menuInfo');
+    if (m) {
+      info.style.display = 'block';
+      document.getElementById('infoName').textContent = m.menu_name;
+      document.getElementById('infoDesc').textContent = '재료: ' + (m.description || '-');
+      document.getElementById('infoCalorie').textContent = '칼로리: ' + (m.calorie ? m.calorie + ' kcal' : '-');
+    } else {
+      info.style.display = 'none';
+    }
+  };
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(tab + 'Page').classList.add('active');
+}
+
+function openAddMenu() {
+  document.getElementById('addMenuModal').classList.add('active');
+  document.getElementById('code').value = '';
+  document.getElementById('name').value = '';
+  document.getElementById('desc').value = '';
+  document.getElementById('calorie').value = '';
+}
+
+function closeAddMenu() {
+  document.getElementById('addMenuModal').classList.remove('active');
+}
+
+async function saveMenu() {
+  const code = document.getElementById('code').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const desc = document.getElementById('desc').value.trim();
+  const calorie = parseInt(document.getElementById('calorie').value) || null;
+  
+  if (!code || !name) {
+    showMsg('코드와 이름 필수', 'error');
+    return;
+  }
+  
+  try {
+    const {error} = await db.from('menu_items').insert([{menu_code:code, menu_name:name, description:desc, calorie:calorie}]);
+    if (error) {
+      if (error.code === '23505') throw new Error('이미 존재하는 코드');
+      throw error;
+    }
+    showMsg('메뉴 추가 완료', 'success');
+    closeAddMenu();
+    loadMenus();
+  } catch (e) {
+    showMsg(e.message, 'error');
+  }
+}
+
+function openEdit(code) {
+  const m = menus.find(x => x.menu_code === code);
+  if (!m) return;
+  document.getElementById('editCode').value = m.menu_code;
+  document.getElementById('editName').value = m.menu_name;
+  document.getElementById('editDesc').value = m.description || '';
+  document.getElementById('editCalorie').value = m.calorie || '';
+  document.getElementById('editMenuModal').classList.add('active');
+}
+
+function closeEdit() {
+  document.getElementById('editMenuModal').classList.remove('active');
+}
+
+async function saveEdit() {
+  const code = document.getElementById('editCode').value;
+  const name = document.getElementById('editName').value.trim();
+  const desc = document.getElementById('editDesc').value.trim();
+  const calorie = parseInt(document.getElementById('editCalorie').value) || null;
+  
+  if (!name) {
+    showMsg('이름 필수', 'error');
+    return;
+  }
+  
+  try {
+    const {error} = await db.from('menu_items').update({menu_name:name, description:desc, calorie:calorie}).eq('menu_code', code);
+    if (error) throw error;
+    showMsg('수정 완료', 'success');
+    closeEdit();
+    loadMenus();
+  } catch (e) {
+    showMsg(e.message, 'error');
+  }
+}
+
+async function delMenu(code) {
+  if (!confirm('삭제?')) return;
+  try {
+    const {error} = await db.from('menu_items').delete().eq('menu_code', code);
+    if (error) {
+      if (error.code === '23503') throw new Error('사용 중인 메뉴');
+      throw error;
+    }
+    showMsg('삭제 완료', 'success');
+    loadMenus();
+  } catch (e) {
+    showMsg(e.message, 'error');
+  }
+}
+
+async function addMeal() {
+  const date = document.getElementById('mealDate').value;
+  const time = document.getElementById('mealTime').value;
+  const code = document.getElementById('mealMenu').value;
+  
+  if (!date || !code) {
+    showMsg('날짜와 메뉴 선택 필수', 'error');
+    return;
+  }
+  
+  const m = menus.find(x => x.menu_code === code);
+  if (!m) {
+    showMsg('메뉴 없음', 'error');
+    return;
+  }
+  
+  try {
+    const id = `MEAL-${date}-${time}-${Date.now()}`;
+    const {error} = await db.from('meals').insert([{
+      id, meal_date:date, time, menu_code:code, name:m.menu_name, description:m.description, calorie:m.calorie
+    }]);
+    if (error) throw error;
+    showMsg(`${date} ${time} 식단 저장 완료`, 'success');
+    document.getElementById('mealMenu').value = '';
+    document.getElementById('menuInfo').style.display = 'none';
+  } catch (e) {
+    showMsg(e.message, 'error');
+  }
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById('msg');
+  el.textContent = (type === 'success' ? '✅ ' : '❌ ') + text;
+  el.className = 'msg ' + type;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+window.addEventListener('load', init);
+</script>
+
+</body>
+</html>

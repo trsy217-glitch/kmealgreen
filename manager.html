@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>건밀그린 매니저</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0F1117;
+  --surface: #181B24;
+  --surface2: #1F2333;
+  --surface3: #252A3D;
+  --green: #4ADE80;
+  --green-dim: #22C55E;
+  --text: #F1F5F9;
+  --text-2: #94A3B8;
+  --text-3: #64748B;
+  --border: rgba(255,255,255,0.07);
+  --red: #F87171;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+  font-family: 'Noto Sans KR', sans-serif; 
+  background: var(--bg); 
+  color: var(--text); 
+  padding: 20px;
+}
+.container { max-width: 1400px; margin: 0 auto; }
+.header {
+  background: var(--surface);
+  padding: 20px 30px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo { font-size: 24px; color: var(--green); font-weight: 700; }
+.logout-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.logout-btn:hover { background: var(--surface3); color: var(--text); }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--green);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.login-form { max-width: 400px; margin: 100px auto; }
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-3);
+  font-size: 14px;
+  font-weight: 500;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.form-textarea { min-height: 80px; resize: vertical; }
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--green);
+}
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.btn-primary { background: var(--green); color: #000; }
+.btn-primary:hover { background: var(--green-dim); }
+.btn-secondary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.btn-secondary:hover { background: var(--surface3); color: var(--text); }
+.btn-danger {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: var(--red);
+}
+.btn-danger:hover { background: rgba(248, 113, 113, 0.2); }
+table { width: 100%; border-collapse: collapse; }
+th {
+  padding: 12px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-3);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+td {
+  padding: 12px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+}
+tr:hover td { background: rgba(255,255,255,0.02); }
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-success { background: rgba(74,222,128,0.15); color: var(--green); }
+.badge-warning { background: rgba(251,191,36,0.15); color: #FBBF24; }
+.status { padding: 10px; margin: 10px 0; border-radius: 6px; }
+.status.success { background: #065f46; color: #4ADE80; }
+.status.error { background: #7f1d1d; color: #fca5a5; }
+.status.info { background: #1e3a8a; color: #93c5fd; }
+.hidden { display: none !important; }
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal.active { display: flex; }
+.modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.modal-title { font-size: 20px; font-weight: 700; color: var(--green); }
+.modal-close {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  font-size: 18px;
+}
+.modal-close:hover { background: var(--surface3); color: var(--text); }
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+.toast {
+  position: fixed;
+  top: 20px; right: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  z-index: 9999;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.menu-card {
+  background: var(--surface2);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  position: relative;
+}
+.menu-card:hover { border-color: rgba(74,222,128,0.3); }
+.menu-actions { display: flex; gap: 8px; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div id="loginPage">
+  <div class="card login-form">
+    <div class="card-title">건밀그린 매니저 로그인</div>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">아이디</label>
+        <input type="text" id="loginId" class="form-input" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <input type="password" id="loginPw" class="form-input" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">로그인</button>
+    </form>
+    <div id="loginStatus"></div>
+  </div>
+</div>
+
+<!-- 매니저 화면 -->
+<div id="managerPage" class="hidden">
+  <div class="container">
+    <div class="header">
+      <div class="logo">🍱 건밀그린 매니저</div>
+      <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">시스템 상태</div>
+      <div id="systemStatus"></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px;">
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 12px; color: var(--text-3); margin-bottom: 8px;">총 주문</div>
+        <div id="statTotal" style="font-size: 32px; font-weight: 700; color: var(--green);">-</div>
+      </div>
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 12px; color: var(--text-3); margin-bottom: 8px;">오늘 주문</div>
+        <div id="statToday" style="font-size: 32px; font-weight: 700; color: #60A5FA;">-</div>
+      </div>
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 12px; color: var(--text-3); margin-bottom: 8px;">총 매출</div>
+        <div id="statRevenue" style="font-size: 32px; font-weight: 700; color: #FBBF24;">-</div>
+      </div>
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 12px; color: var(--text-3); margin-bottom: 8px;">결제완료</div>
+        <div id="statCompleted" style="font-size: 32px; font-weight: 700; color: #A78BFA;">-</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>주문 내역</span>
+        <button class="btn btn-secondary" onclick="loadOrders()">🔄 새로고침</button>
+      </div>
+      <div id="ordersContent">로딩 중...</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>메뉴 관리</span>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="openMenuModal()">+ 메뉴 추가</button>
+          <button class="btn btn-secondary" onclick="loadMenus()">🔄 새로고침</button>
+        </div>
+      </div>
+      <div id="menusContent">로딩 중...</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>식단 목록</span>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="openMealModal()">+ 식단 추가</button>
+          <button class="btn btn-secondary" onclick="loadMeals()">🔄 새로고침</button>
+        </div>
+      </div>
+      <div id="mealsContent">로딩 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 메뉴 모달 -->
+<div id="menuModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title" id="menuModalTitle">메뉴 추가</div>
+      <div class="modal-close" onclick="closeMenuModal()">✕</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">메뉴 코드 *</label>
+      <input type="text" id="menuCode" class="form-input" placeholder="M011" maxlength="10">
+    </div>
+    <div class="form-group">
+      <label class="form-label">메뉴명 *</label>
+      <input type="text" id="menuName" class="form-input" placeholder="연어 샐러드">
+    </div>
+    <div class="form-group">
+      <label class="form-label">재료/설명</label>
+      <textarea id="menuDesc" class="form-textarea" placeholder="신선한 연어, 아보카도, 믹스 채소"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">칼로리</label>
+      <input type="number" id="menuCalorie" class="form-input" placeholder="450">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeMenuModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveMenu()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 식단 모달 -->
+<div id="mealModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">식단 추가</div>
+      <div class="modal-close" onclick="closeMealModal()">✕</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">날짜 *</label>
+      <input type="date" id="mealDate" class="form-input">
+    </div>
+    <div class="form-group">
+      <label class="form-label">시간 *</label>
+      <select id="mealTime" class="form-select">
+        <option value="아침">아침</option>
+        <option value="점심" selected>점심</option>
+        <option value="저녁">저녁</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">메뉴 선택</label>
+      <select id="mealMenuSelect" class="form-select" onchange="fillMealFromMenu()">
+        <option value="">직접 입력</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">메뉴명 *</label>
+      <input type="text" id="mealName" class="form-input" placeholder="치폴레 보울">
+    </div>
+    <div class="form-group">
+      <label class="form-label">설명</label>
+      <textarea id="mealDesc" class="form-textarea" placeholder="닭가슴살, 퀴노아..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">칼로리</label>
+      <input type="number" id="mealCalorie" class="form-input" placeholder="520">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeMealModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveMeal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+let supabaseClient = null;
+let isLoggedIn = false;
+let currentMenus = [];
+let editingMenuCode = null;
+const MANAGER_ID = 'kmeal_manager';
+const MANAGER_PW = 'green2024!';
+
+window.addEventListener('load', () => {
+  console.log('=== 매니저 사이트 시작 ===');
+  initSupabase();
+  document.getElementById('mealDate').value = new Date().toISOString().split('T')[0];
+});
+
+function initSupabase() {
+  try {
+    console.log('🔵 Supabase 초기화 시작...');
+    if (typeof window.supabase === 'undefined') throw new Error('Supabase CDN 로딩 실패');
+    const SUPABASE_URL = 'https://tuxsyxywdeecdflgyuib.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eHN5eHl3ZGVlY2RmbGd5dWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzY0NzQsImV4cCI6MjA4NzI1MjQ3NH0.M5JNFHBTiPK5zv3DwBieKn5f8oRdmmRKZO99o0-tUWk';
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✅ Supabase 초기화 완료');
+    updateSystemStatus('✅ Supabase 연결 성공', 'success');
+  } catch (error) {
+    console.error('❌ Supabase 초기화 실패:', error);
+    updateSystemStatus('❌ Supabase 연결 실패: ' + error.message, 'error');
+  }
+}
+
+function handleLogin(event) {
+  event.preventDefault();
+  const id = document.getElementById('loginId').value;
+  const pw = document.getElementById('loginPw').value;
+  if (id === MANAGER_ID && pw === MANAGER_PW) {
+    isLoggedIn = true;
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('managerPage').classList.remove('hidden');
+    console.log('✅ 로그인 성공');
+    loadOrders();
+    loadMeals();
+    loadMenus();
+  } else {
+    document.getElementById('loginStatus').innerHTML = '<div class="status error">❌ 아이디 또는 비밀번호가 틀립니다</div>';
+  }
+}
+
+function logout() {
+  isLoggedIn = false;
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('managerPage').classList.add('hidden');
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginPw').value = '';
+}
+
+async function loadOrders() {
+  const contentEl = document.getElementById('ordersContent');
+  try {
+    contentEl.innerHTML = '<div class="status">⏳ 주문 조회 중...</div>';
+    console.log('🔵 주문 조회 시작...');
+    if (!supabaseClient) throw new Error('Supabase 클라이언트가 초기화되지 않음');
+    const { data, error } = await supabaseClient.from('orders').select('*').order('order_date', { ascending: false });
+    if (error) throw error;
+    console.log('✅ 주문 조회 성공:', data.length + '건');
+    updateStats(data);
+    if (data.length === 0) {
+      contentEl.innerHTML = '<div class="status">📋 주문 데이터가 없습니다</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>ID</th><th>고객명</th><th>전화번호</th><th>주문일</th><th>플랜</th><th>금액</th><th>결제</th><th>상태</th></tr></thead><tbody>';
+    data.forEach(order => {
+      html += `<tr><td>${order.id}</td><td>${order.name || order.user_id || '-'}</td><td>${order.phone || '-'}</td><td>${order.order_date || '-'}</td><td>${order.plan || '-'}</td><td>${order.total_price ? order.total_price.toLocaleString() + '원' : '-'}</td><td>${order.payment_method || '-'}</td><td><select onchange="changeOrderStatus(${order.id}, this.value)" style="padding: 4px 8px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 4px;"><option value="입금대기" ${order.status === '입금대기' ? 'selected' : ''}>입금대기</option><option value="결제확인중" ${order.status === '결제확인중' ? 'selected' : ''}>결제확인중</option><option value="결제완료" ${order.status === '결제완료' ? 'selected' : ''}>결제완료</option><option value="준비중" ${order.status === '준비중' ? 'selected' : ''}>준비중</option><option value="준비완료" ${order.status === '준비완료' ? 'selected' : ''}>준비완료</option><option value="완료" ${order.status === '완료' ? 'selected' : ''}>완료</option><option value="취소" ${order.status === '취소' ? 'selected' : ''}>취소</option></select></td></tr>`;
+    });
+    html += '</tbody></table>';
+    contentEl.innerHTML = html;
+  } catch (error) {
+    console.error('❌ 주문 조회 실패:', error);
+    contentEl.innerHTML = `<div class="status error">❌ 조회 실패: ${error.message}</div>`;
+  }
+}
+
+function updateStats(orders) {
+  try {
+    const totalCount = orders.length;
+    const today = new Date().toISOString().split('T')[0];
+    const todayCount = orders.filter(o => o.order_date === today).length;
+    const totalRevenue = orders.filter(o => o.status !== '취소').reduce((sum, o) => sum + (o.total_price || 0), 0);
+    const completedCount = orders.filter(o => o.status === '결제완료').length;
+    document.getElementById('statTotal').textContent = totalCount.toLocaleString();
+    document.getElementById('statToday').textContent = todayCount.toLocaleString();
+    document.getElementById('statRevenue').textContent = (totalRevenue / 10000).toFixed(1) + '만원';
+    document.getElementById('statCompleted').textContent = completedCount.toLocaleString();
+  } catch (error) {
+    console.error('❌ 통계 계산 실패:', error);
+  }
+}
+
+async function changeOrderStatus(orderId, newStatus) {
+  try {
+    console.log(`🔵 주문 ${orderId} 상태 변경: ${newStatus}`);
+    const { data, error } = await supabaseClient.from('orders').update({ status: newStatus }).eq('id', orderId).select();
+    if (error) throw error;
+    console.log('✅ 상태 변경 완료:', data);
+    showToast(`✅ 주문 #${orderId} 상태가 "${newStatus}"로 변경되었습니다`);
+  } catch (error) {
+    console.error('❌ 상태 변경 실패:', error);
+    alert('상태 변경 실패: ' + error.message);
+  }
+}
+
+async function loadMenus() {
+  const contentEl = document.getElementById('menusContent');
+  try {
+    contentEl.innerHTML = '<div class="status">⏳ 메뉴 조회 중...</div>';
+    console.log('🔵 메뉴 조회 시작...');
+    if (!supabaseClient) throw new Error('Supabase 클라이언트가 초기화되지 않음');
+    const { data, error } = await supabaseClient.from('menu_items').select('*').order('menu_code', { ascending: true });
+    if (error) throw error;
+    console.log('✅ 메뉴 조회 성공:', data.length + '건');
+    currentMenus = data;
+    updateMealMenuSelect();
+    if (data.length === 0) {
+      contentEl.innerHTML = '<div class="status">📋 메뉴 데이터가 없습니다</div>';
+      return;
+    }
+    let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">';
+    data.forEach(menu => {
+      html += `<div class="menu-card"><div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;"><div><div style="color: var(--text-3); font-size: 11px; margin-bottom: 4px;">${menu.menu_code}</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">${menu.menu_name}</div></div><div style="background: rgba(74,222,128,0.15); color: var(--green); padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">${menu.calorie || 0}kcal</div></div><div style="color: var(--text-3); font-size: 13px; line-height: 1.5; margin-bottom: 12px;">${menu.description || '-'}</div><div class="menu-actions"><button class="btn btn-secondary" style="flex: 1; font-size: 13px; padding: 6px 12px;" onclick="editMenu('${menu.menu_code}')">수정</button><button class="btn btn-danger" style="flex: 1; font-size: 13px; padding: 6px 12px;" onclick="deleteMenu('${menu.menu_code}')">삭제</button></div></div>`;
+    });
+    html += '</div>';
+    contentEl.innerHTML = html;
+  } catch (error) {
+    console.error('❌ 메뉴 조회 실패:', error);
+    contentEl.innerHTML = `<div class="status error">❌ 조회 실패: ${error.message}</div>`;
+  }
+}
+
+function openMenuModal() {
+  editingMenuCode = null;
+  document.getElementById('menuModalTitle').textContent = '메뉴 추가';
+  document.getElementById('menuCode').value = '';
+  document.getElementById('menuCode').disabled = false;
+  document.getElementById('menuName').value = '';
+  document.getElementById('menuDesc').value = '';
+  document.getElementById('menuCalorie').value = '';
+  document.getElementById('menuModal').classList.add('active');
+}
+
+function closeMenuModal() {
+  document.getElementById('menuModal').classList.remove('active');
+}
+
+function editMenu(menuCode) {
+  const menu = currentMenus.find(m => m.menu_code === menuCode);
+  if (!menu) return;
+  editingMenuCode = menuCode;
+  document.getElementById('menuModalTitle').textContent = '메뉴 수정';
+  document.getElementById('menuCode').value = menu.menu_code;
+  document.getElementById('menuCode').disabled = true;
+  document.getElementById('menuName').value = menu.menu_name;
+  document.getElementById('menuDesc').value = menu.description || '';
+  document.getElementById('menuCalorie').value = menu.calorie || '';
+  document.getElementById('menuModal').classList.add('active');
+}
+
+async function saveMenu() {
+  try {
+    const code = document.getElementById('menuCode').value.trim();
+    const name = document.getElementById('menuName').value.trim();
+    const desc = document.getElementById('menuDesc').value.trim();
+    const calorie = document.getElementById('menuCalorie').value;
+    if (!code || !name) {
+      alert('메뉴 코드와 메뉴명은 필수입니다');
+      return;
+    }
+    const menuData = { menu_code: code, menu_name: name, description: desc, calorie: calorie ? parseInt(calorie) : null };
+    if (editingMenuCode) {
+      const { error } = await supabaseClient.from('menu_items').update(menuData).eq('menu_code', editingMenuCode);
+      if (error) throw error;
+      showToast('✅ 메뉴가 수정되었습니다');
+    } else {
+      const { error } = await supabaseClient.from('menu_items').insert([menuData]);
+      if (error) throw error;
+      showToast('✅ 메뉴가 추가되었습니다');
+    }
+    closeMenuModal();
+    loadMenus();
+  } catch (error) {
+    console.error('❌ 메뉴 저장 실패:', error);
+    alert('저장 실패: ' + error.message);
+  }
+}
+
+async function deleteMenu(menuCode) {
+  if (!confirm(`메뉴 ${menuCode}를 삭제하시겠습니까?`)) return;
+  try {
+    const { error } = await supabaseClient.from('menu_items').delete().eq('menu_code', menuCode);
+    if (error) throw error;
+    showToast('✅ 메뉴가 삭제되었습니다');
+    loadMenus();
+  } catch (error) {
+    console.error('❌ 메뉴 삭제 실패:', error);
+    alert('삭제 실패: ' + error.message);
+  }
+}
+
+async function loadMeals() {
+  const contentEl = document.getElementById('mealsContent');
+  try {
+    contentEl.innerHTML = '<div class="status">⏳ 식단 조회 중...</div>';
+    console.log('🔵 식단 조회 시작...');
+    if (!supabaseClient) throw new Error('Supabase 클라이언트가 초기화되지 않음');
+    const { data, error } = await supabaseClient.from('meals').select('*').order('meal_date', { ascending: false }).limit(30);
+    if (error) throw error;
+    console.log('✅ 식단 조회 성공:', data.length + '건');
+    if (data.length === 0) {
+      contentEl.innerHTML = '<div class="status">📋 식단 데이터가 없습니다</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>날짜</th><th>시간</th><th>메뉴코드</th><th>메뉴명</th><th>설명</th><th>칼로리</th><th>작업</th></tr></thead><tbody>';
+    data.forEach(meal => {
+      html += `<tr><td>${meal.meal_date || '-'}</td><td>${meal.time || '-'}</td><td>${meal.menu_code || '-'}</td><td><strong>${meal.name || '-'}</strong></td><td style="color: var(--text-3); font-size: 13px;">${meal.description || '-'}</td><td>${meal.calorie ? meal.calorie + 'kcal' : '-'}</td><td><button class="btn btn-danger" style="font-size: 12px; padding: 4px 12px;" onclick="deleteMeal(${meal.id})">삭제</button></td></tr>`;
+    });
+    html += '</tbody></table>';
+    contentEl.innerHTML = html;
+  } catch (error) {
+    console.error('❌ 식단 조회 실패:', error);
+    contentEl.innerHTML = `<div class="status error">❌ 조회 실패: ${error.message}</div>`;
+  }
+}
+
+function openMealModal() {
+  document.getElementById('mealDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('mealTime').value = '점심';
+  document.getElementById('mealMenuSelect').value = '';
+  document.getElementById('mealName').value = '';
+  document.getElementById('mealDesc').value = '';
+  document.getElementById('mealCalorie').value = '';
+  document.getElementById('mealModal').classList.add('active');
+}
+
+function closeMealModal() {
+  document.getElementById('mealModal').classList.remove('active');
+}
+
+function updateMealMenuSelect() {
+  const select = document.getElementById('mealMenuSelect');
+  let html = '<option value="">직접 입력</option>';
+  currentMenus.forEach(menu => {
+    html += `<option value="${menu.menu_code}">${menu.menu_code} - ${menu.menu_name}</option>`;
+  });
+  select.innerHTML = html;
+}
+
+function fillMealFromMenu() {
+  const menuCode = document.getElementById('mealMenuSelect').value;
+  if (!menuCode) {
+    document.getElementById('mealName').value = '';
+    document.getElementById('mealDesc').value = '';
+    document.getElementById('mealCalorie').value = '';
+    return;
+  }
+  const menu = currentMenus.find(m => m.menu_code === menuCode);
+  if (menu) {
+    document.getElementById('mealName').value = menu.menu_name;
+    document.getElementById('mealDesc').value = menu.description || '';
+    document.getElementById('mealCalorie').value = menu.calorie || '';
+  }
+}
+
+async function saveMeal() {
+  try {
+    const date = document.getElementById('mealDate').value;
+    const time = document.getElementById('mealTime').value;
+    const menuCode = document.getElementById('mealMenuSelect').value;
+    const name = document.getElementById('mealName').value.trim();
+    const desc = document.getElementById('mealDesc').value.trim();
+    const calorie = document.getElementById('mealCalorie').value;
+    if (!date || !time || !name) {
+      alert('날짜, 시간, 메뉴명은 필수입니다');
+      return;
+    }
+    const mealData = { meal_date: date, time: time, menu_code: menuCode || null, name: name, description: desc, calorie: calorie ? parseInt(calorie) : null };
+    const { error } = await supabaseClient.from('meals').insert([mealData]);
+    if (error) throw error;
+    showToast('✅ 식단이 추가되었습니다');
+    closeMealModal();
+    loadMeals();
+  } catch (error) {
+    console.error('❌ 식단 저장 실패:', error);
+    alert('저장 실패: ' + error.message);
+  }
+}
+
+async function deleteMeal(mealId) {
+  if (!confirm('이 식단을 삭제하시겠습니까?')) return;
+  try {
+    const { error } = await supabaseClient.from('meals').delete().eq('id', mealId);
+    if (error) throw error;
+    showToast('✅ 식단이 삭제되었습니다');
+    loadMeals();
+  } catch (error) {
+    console.error('❌ 식단 삭제 실패:', error);
+    alert('삭제 실패: ' + error.message);
+  }
+}
+
+function updateSystemStatus(message, type) {
+  const el = document.getElementById('systemStatus');
+  if (el) {
+    el.innerHTML = `<div class="status ${type}">${message}</div>`;
+  }
+}
+
+function showToast(message) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+</script>
+</body>
+</html>

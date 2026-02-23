@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase 연결 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        h1 {
+            color: #4ADE80;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #333;
+            border-radius: 8px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: #065f46;
+            color: #4ADE80;
+        }
+        .error {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+        .info {
+            background: #1e3a8a;
+            color: #93c5fd;
+        }
+        button {
+            background: #4ADE80;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #22c55e;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+        th {
+            background: #1a1a1a;
+            color: #4ADE80;
+        }
+        .json-view {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Supabase 주문 조회 테스트</h1>
+        
+        <div class="test-section">
+            <h2>1단계: Supabase CDN 로딩</h2>
+            <div id="cdn-status" class="status info">대기 중...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>2단계: Supabase 클라이언트 생성</h2>
+            <div id="client-status" class="status info">대기 중...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>3단계: 주문 데이터 조회</h2>
+            <button onclick="testOrdersFetch()">주문 조회 테스트</button>
+            <div id="fetch-status" class="status info">버튼을 눌러주세요</div>
+            <div id="data-count" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>주문 데이터 (테이블)</h2>
+            <div id="orders-table"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>원본 데이터 (JSON)</h2>
+            <div id="json-data" class="json-view">데이터 조회 후 표시됩니다</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Console 로그</h2>
+            <button onclick="location.reload()">새로고침</button>
+            <div class="info" style="margin-top: 10px;">
+                F12를 눌러 Console 탭도 확인해주세요
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // 전역 변수
+        let supabaseClient = null;
+
+        // 1단계: CDN 로딩 확인
+        window.addEventListener('load', () => {
+            console.log('=== 테스트 시작 ===');
+            
+            setTimeout(() => {
+                if (typeof window.supabase !== 'undefined') {
+                    document.getElementById('cdn-status').className = 'status success';
+                    document.getElementById('cdn-status').textContent = '✅ Supabase CDN 로딩 성공';
+                    console.log('✅ window.supabase:', typeof window.supabase);
+                    initSupabase();
+                } else {
+                    document.getElementById('cdn-status').className = 'status error';
+                    document.getElementById('cdn-status').textContent = '❌ Supabase CDN 로딩 실패';
+                    console.error('❌ window.supabase가 정의되지 않음');
+                }
+            }, 1000);
+        });
+
+        // 2단계: Supabase 클라이언트 생성
+        function initSupabase() {
+            try {
+                const SUPABASE_URL = 'https://tuxsyxywdeecdflgyuib.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eHN5eHl3ZGVlY2RmbGd5dWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzY0NzQsImV4cCI6MjA4NzI1MjQ3NH0.M5JNFHBTiPK5zv3DwBieKn5f8oRdmmRKZO99o0-tUWk';
+
+                console.log('🔵 클라이언트 생성 시도...');
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                console.log('✅ supabaseClient:', supabaseClient);
+                console.log('✅ supabaseClient.from:', typeof supabaseClient.from);
+
+                document.getElementById('client-status').className = 'status success';
+                document.getElementById('client-status').textContent = '✅ Supabase 클라이언트 생성 성공';
+                
+            } catch (error) {
+                document.getElementById('client-status').className = 'status error';
+                document.getElementById('client-status').textContent = '❌ 클라이언트 생성 실패: ' + error.message;
+                console.error('❌ 클라이언트 생성 에러:', error);
+            }
+        }
+
+        // 3단계: 주문 데이터 조회
+        async function testOrdersFetch() {
+            const statusEl = document.getElementById('fetch-status');
+            const countEl = document.getElementById('data-count');
+            const tableEl = document.getElementById('orders-table');
+            const jsonEl = document.getElementById('json-data');
+
+            try {
+                statusEl.className = 'status info';
+                statusEl.textContent = '⏳ 주문 데이터 조회 중...';
+                console.log('🔵 주문 조회 시작...');
+
+                if (!supabaseClient) {
+                    throw new Error('Supabase 클라이언트가 초기화되지 않음');
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('orders')
+                    .select('*')
+                    .order('order_date', { ascending: false });
+
+                console.log('📊 조회 결과:');
+                console.log('  data:', data);
+                console.log('  error:', error);
+
+                if (error) {
+                    throw error;
+                }
+
+                // 성공
+                statusEl.className = 'status success';
+                statusEl.textContent = '✅ 주문 데이터 조회 성공!';
+                
+                countEl.innerHTML = `<div class="success" style="padding: 10px;">총 <strong>${data.length}</strong>개의 주문을 찾았습니다</div>`;
+
+                // 테이블 생성
+                if (data.length > 0) {
+                    let tableHTML = '<table><thead><tr>';
+                    tableHTML += '<th>ID</th><th>고객명</th><th>전화번호</th><th>날짜</th><th>플랜</th><th>금액</th><th>상태</th>';
+                    tableHTML += '</tr></thead><tbody>';
+
+                    data.forEach(order => {
+                        tableHTML += '<tr>';
+                        tableHTML += `<td>${order.id || '-'}</td>`;
+                        tableHTML += `<td>${order.name || order.user_id || '-'}</td>`;
+                        tableHTML += `<td>${order.phone || '-'}</td>`;
+                        tableHTML += `<td>${order.order_date || '-'}</td>`;
+                        tableHTML += `<td>${order.plan || '-'}</td>`;
+                        tableHTML += `<td>${order.total_price ? order.total_price.toLocaleString() + '원' : '-'}</td>`;
+                        tableHTML += `<td>${order.status || '-'}</td>`;
+                        tableHTML += '</tr>';
+                    });
+
+                    tableHTML += '</tbody></table>';
+                    tableEl.innerHTML = tableHTML;
+                } else {
+                    tableEl.innerHTML = '<div class="info">주문 데이터가 없습니다</div>';
+                }
+
+                // JSON 표시
+                jsonEl.textContent = JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ 조회 실패: ' + error.message;
+                
+                countEl.innerHTML = '';
+                tableEl.innerHTML = '';
+                
+                jsonEl.textContent = JSON.stringify({
+                    error: error.message,
+                    code: error.code,
+                    details: error.details,
+                    hint: error.hint
+                }, null, 2);
+
+                console.error('❌ 주문 조회 에러:', error);
+                console.error('  코드:', error.code);
+                console.error('  메시지:', error.message);
+                console.error('  상세:', error.details);
+            }
+        }
+    </script>
+</body>
+</html>

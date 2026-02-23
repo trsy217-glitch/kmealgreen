@@ -226,12 +226,6 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 // Supabase 설정
 // ========================================
 // Supabase 라이브러리 로드 확인
-if (typeof window.supabase === 'undefined') {
-    console.error('❌ [매니저] Supabase 라이브러리가 로드되지 않았습니다!');
-    alert('Supabase 연결 오류입니다. 인터넷 연결을 확인해주세요.');
-} else {
-    console.log('✅ [매니저] Supabase 라이브러리 로드 완료!');
-}
 
 // Supabase 클라이언트 생성
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

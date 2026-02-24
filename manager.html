@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>건밀그린 매니저</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0F1117;
+  --surface: #181B24;
+  --surface2: #1F2333;
+  --green: #4ADE80;
+  --text: #F1F5F9;
+  --text-2: #94A3B8;
+  --text-3: #64748B;
+  --border: rgba(255,255,255,0.07);
+  --red: #F87171;
+  --amber: #FBBF24;
+  --blue: #60A5FA;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+  font-family: 'Noto Sans KR', sans-serif; 
+  background: var(--bg); 
+  color: var(--text);
+  padding: 20px;
+}
+.container { max-width: 1400px; margin: 0 auto; }
+.header {
+  background: var(--surface);
+  padding: 20px 30px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo { font-size: 24px; color: var(--green); font-weight: 700; }
+.logout-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.logout-btn:hover { background: var(--surface); color: var(--text); }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--green);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-primary { background: var(--green); color: #000; }
+.btn-primary:hover { background: #22C55E; }
+.btn-secondary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+  padding: 12px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-3);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 12px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+}
+.status { padding: 10px; margin: 10px 0; border-radius: 6px; }
+.status.success { background: #065f46; color: #4ADE80; }
+.status.error { background: #7f1d1d; color: #fca5a5; }
+.hidden { display: none !important; }
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; color: black; }
+  .card { border: 1px solid #000; }
+}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="loginPage">
+  <div class="card" style="max-width: 400px; margin: 100px auto;">
+    <div class="card-title" style="text-align: center;">건밀그린 매니저 로그인</div>
+    <form onsubmit="handleLogin(event)">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--text-3);">아이디</label>
+        <input type="text" id="loginId" required 
+               style="width: 100%; padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--text-3);">비밀번호</label>
+        <input type="password" id="loginPw" required 
+               style="width: 100%; padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">로그인</button>
+    </form>
+    <div id="loginStatus"></div>
+  </div>
+</div>
+
+<!-- 매니저 화면 -->
+<div id="managerPage" class="hidden">
+  <div class="container">
+    <div class="header no-print">
+      <div class="logo">🍱 건밀그린 매니저</div>
+      <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </div>
+
+    <!-- 오늘 준비 리스트 -->
+    <div class="card">
+      <div class="card-title">
+        <span>🍱 오늘 준비 리스트 (결제완료만)</span>
+        <div>
+          <button class="btn btn-primary no-print" onclick="window.print()">🖨️ 인쇄</button>
+          <button class="btn btn-secondary no-print" onclick="loadTodayPrep()" style="margin-left: 10px;">🔄 새로고침</button>
+        </div>
+      </div>
+      <div id="todayPrepContent">로딩 중...</div>
+    </div>
+
+    <!-- 전체 주문 -->
+    <div class="card no-print">
+      <div class="card-title">
+        <span>📦 전체 주문 내역</span>
+        <button class="btn btn-secondary" onclick="loadAllOrders()">🔄 새로고침</button>
+      </div>
+      <div id="allOrdersContent">로딩 중...</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+let supabaseClient = null;
+const MANAGER_ID = 'kmeal_manager';
+const MANAGER_PW = 'green2024!';
+
+window.addEventListener('load', () => {
+  console.log('=== 매니저 시작 ===');
+  initSupabase();
+});
+
+function initSupabase() {
+  try {
+    if (typeof window.supabase === 'undefined') throw new Error('Supabase CDN 실패');
+    const URL = 'https://tuxsyxywdeecdflgyuib.supabase.co';
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eHN5eHl3ZGVlY2RmbGd5dWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzY0NzQsImV4cCI6MjA4NzI1MjQ3NH0.M5JNFHBTiPK5zv3DwBieKn5f8oRdmmRKZO99o0-tUWk';
+    supabaseClient = window.supabase.createClient(URL, KEY);
+    console.log('✅ Supabase 연결');
+  } catch (e) {
+    console.error('❌ Supabase 실패:', e);
+  }
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const id = document.getElementById('loginId').value;
+  const pw = document.getElementById('loginPw').value;
+  if (id === MANAGER_ID && pw === MANAGER_PW) {
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('managerPage').classList.remove('hidden');
+    console.log('✅ 로그인');
+    loadTodayPrep();
+    loadAllOrders();
+  } else {
+    document.getElementById('loginStatus').innerHTML = '<div class="status error">❌ 로그인 실패</div>';
+  }
+}
+
+function logout() {
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('managerPage').classList.add('hidden');
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginPw').value = '';
+}
+
+async function loadTodayPrep() {
+  const el = document.getElementById('todayPrepContent');
+  try {
+    el.innerHTML = '<div class="status">⏳ 로딩...</div>';
+    if (!supabaseClient) throw new Error('Supabase 없음');
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 결제완료 주문 조회
+    const { data: orders, error } = await supabaseClient
+      .from('orders')
+      .select('*')
+      .eq('status', '결제완료')
+      .order('time', { ascending: true });
+    
+    if (error) throw error;
+    
+    if (!orders || orders.length === 0) {
+      el.innerHTML = '<div class="status">📋 오늘 준비할 주문이 없습니다</div>';
+      return;
+    }
+    
+    // 오늘 배송 해당하는 주문 필터링
+    const todayOrders = orders.filter(order => {
+      // start_date 확인
+      if (order.start_date === today) return true;
+      
+      // TODO: 구독 기간 계산 로직 추가
+      // 현재는 start_date만 확인
+      return false;
+    });
+    
+    if (todayOrders.length === 0) {
+      el.innerHTML = '<div class="status">📋 오늘 준비할 주문이 없습니다</div>';
+      return;
+    }
+    
+    // 시간별 → 픽업타입별 → 메뉴별 그룹핑
+    const grouped = {};
+    
+    todayOrders.forEach(order => {
+      const time = order.time || '시간미정';
+      const pickup = order.pickup_type || '배달';
+      const menu = order.plan || '메뉴미정';
+      
+      if (!grouped[time]) grouped[time] = {};
+      if (!grouped[time][pickup]) grouped[time][pickup] = {};
+      if (!grouped[time][pickup][menu]) grouped[time][pickup][menu] = [];
+      
+      grouped[time][pickup][menu].push(order);
+    });
+    
+    // HTML 생성
+    let html = `<h2 style="color: var(--green); margin-bottom: 20px;">📅 ${today} 준비 리스트</h2>`;
+    
+    Object.keys(grouped).sort().forEach(time => {
+      html += `<h3 style="color: var(--amber); margin-top: 30px; margin-bottom: 15px;">⏰ ${time}</h3>`;
+      
+      Object.keys(grouped[time]).forEach(pickup => {
+        const pickupIcon = pickup === '배달' ? '🚚' : pickup === '픽업' ? '🏃' : '🍽️';
+        html += `<h4 style="color: var(--blue); margin-top: 20px; margin-bottom: 10px;">${pickupIcon} ${pickup}</h4>`;
+        
+        Object.keys(grouped[time][pickup]).forEach(menu => {
+          const orders = grouped[time][pickup][menu];
+          html += `<div style="background: var(--surface2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">`;
+          html += `<div style="font-size: 16px; font-weight: 700; color: var(--green); margin-bottom: 10px;">🍱 ${menu} x${orders.length}개</div>`;
+          
+          orders.forEach(order => {
+            html += `<div style="padding: 10px; border-left: 3px solid var(--border); margin-bottom: 8px; margin-left: 20px;">`;
+            html += `<div style="font-weight: 600;">${order.name} (${order.phone})</div>`;
+            if (order.topping) html += `<div style="color: var(--text-3); font-size: 13px;">옵션: ${order.topping}</div>`;
+            if (order.special_request) html += `<div style="color: var(--amber); font-size: 13px;">특별요청: ${order.special_request}</div>`;
+            html += `</div>`;
+          });
+          
+          html += `</div>`;
+        });
+      });
+    });
+    
+    el.innerHTML = html;
+    
+  } catch (e) {
+    console.error('❌ 준비 리스트 실패:', e);
+    el.innerHTML = `<div class="status error">❌ 실패: ${e.message}</div>`;
+  }
+}
+
+async function loadAllOrders() {
+  const el = document.getElementById('allOrdersContent');
+  try {
+    el.innerHTML = '<div class="status">⏳ 로딩...</div>';
+    if (!supabaseClient) throw new Error('Supabase 없음');
+    
+    const { data, error } = await supabaseClient
+      .from('orders')
+      .select('*')
+      .order('start_date', { ascending: false })
+      .limit(50);
+    
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="status">📋 주문 없음</div>';
+      return;
+    }
+    
+    let html = '<table><thead><tr><th>ID</th><th>고객명</th><th>전화</th><th>시작일</th><th>플랜</th><th>픽업</th><th>요일</th><th>시간</th><th>금액</th><th>상태</th></tr></thead><tbody>';
+    
+    data.forEach(o => {
+      html += `<tr>`;
+      html += `<td>${o.id}</td>`;
+      html += `<td>${o.name}</td>`;
+      html += `<td>${o.phone}</td>`;
+      html += `<td>${o.start_date}</td>`;
+      html += `<td>${o.plan}</td>`;
+      html += `<td>${o.pickup_type || '-'}</td>`;
+      html += `<td>${o.days}</td>`;
+      html += `<td>${o.time}</td>`;
+      html += `<td>${(o.total_price || 0).toLocaleString()}원</td>`;
+      html += `<td><select onchange="changeStatus(${o.id}, this.value)" style="padding: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 4px;">`;
+      html += `<option value="입금대기"${o.status === '입금대기' ? ' selected' : ''}>입금대기</option>`;
+      html += `<option value="결제확인중"${o.status === '결제확인중' ? ' selected' : ''}>결제확인중</option>`;
+      html += `<option value="결제완료"${o.status === '결제완료' ? ' selected' : ''}>결제완료</option>`;
+      html += `<option value="준비중"${o.status === '준비중' ? ' selected' : ''}>준비중</option>`;
+      html += `<option value="완료"${o.status === '완료' ? ' selected' : ''}>완료</option>`;
+      html += `<option value="취소"${o.status === '취소' ? ' selected' : ''}>취소</option>`;
+      html += `</select></td>`;
+      html += `</tr>`;
+    });
+    
+    html += '</tbody></table>';
+    el.innerHTML = html;
+    
+  } catch (e) {
+    console.error('❌ 주문 조회 실패:', e);
+    el.innerHTML = `<div class="status error">❌ 실패: ${e.message}</div>`;
+  }
+}
+
+async function changeStatus(id, status) {
+  try {
+    const { error } = await supabaseClient
+      .from('orders')
+      .update({ status })
+      .eq('id', id);
+    
+    if (error) throw error;
+    console.log(`✅ 주문 #${id} → ${status}`);
+    alert(`주문 #${id} 상태가 "${status}"로 변경되었습니다.`);
+  } catch (e) {
+    console.error('❌ 상태 변경 실패:', e);
+    alert('상태 변경 실패: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>

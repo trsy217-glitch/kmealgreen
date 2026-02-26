@@ -1747,7 +1747,8 @@
             </div>
 
             <!-- 달력 그리드 -->
-            <div id="custCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#E5E7EB;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);"></div>
+           <div style="overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+  <div id="custCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#E5E7EB;min-width:700px;">box-shadow:0 4px 20px rgba(0,0,0,0.08);"></div>
 
             <!-- 빈 상태 안내 -->
             <div id="custCalEmpty" style="display:none;text-align:center;padding:3rem;background:var(--light-gray);border-radius:16px;margin-top:1rem;">

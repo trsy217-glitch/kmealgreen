@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>건밀그린 매니저 BETA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--surface:#181B24;--surface2:#1F2333;--surface3:#252A3D;--green:#4ADE80;--green-dim:#22C55E;--text:#F1F5F9;--text-2:#94A3B8;--text-3:#64748B;--border:rgba(255,255,255,0.07);--red:#F87171;--amber:#FBBF24;--blue:#60A5FA;--purple:#A78BFA;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
+.sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;overflow-y:auto;}
+.sidebar-brand{padding:2rem 1.5rem;border-bottom:1px solid var(--border);}
+.logo{font-size:1.5rem;color:var(--green);font-weight:700;}
+.subtitle{font-size:0.75rem;color:var(--text-3);margin-top:0.5rem;}
+.nav{padding:1rem 0;flex:1;}
+.nav-section{padding:1rem 1.5rem 0.5rem;font-size:0.7rem;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;}
+.nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1.5rem;cursor:pointer;color:var(--text-2);font-size:0.9rem;font-weight:500;border-left:3px solid transparent;transition:all 0.2s;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:rgba(74,222,128,0.08);color:var(--green);border-left-color:var(--green);}
+.nav-icon{font-size:1.1rem;width:20px;}
+.main{margin-left:260px;flex:1;display:flex;flex-direction:column;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.topbar-title{font-size:1.6rem;font-weight:700;color:var(--text);}
+.logout-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text-2);padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.85rem;}
+.logout-btn:hover{background:var(--surface3);color:var(--text);}
+.content{padding:2rem;flex:1;overflow-y:auto;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:2rem;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.green::before{background:var(--green);}
+.stat-card.amber::before{background:var(--amber);}
+.stat-card.blue::before{background:var(--blue);}
+.stat-card.purple::before{background:var(--purple);}
+.stat-label{font-size:0.75rem;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;}
+.stat-value{font-size:2rem;font-weight:700;color:var(--text);line-height:1;}
+.stat-sub{font-size:0.8rem;color:var(--text-3);margin-top:0.5rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;}
+.card-title{font-size:1.1rem;font-weight:700;color:var(--text);}
+.btn{padding:0.6rem 1.2rem;border:none;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all 0.2s;}
+.btn-primary{background:var(--green);color:#000;}
+.btn-primary:hover{background:var(--green-dim);}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text-2);}
+.btn-secondary:hover{background:var(--surface3);color:var(--text);}
+.btn-danger{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--red);}
+.btn-danger:hover{background:rgba(248,113,113,0.2);}
+table{width:100%;border-collapse:collapse;}
+th{padding:0.75rem 1rem;text-align:left;font-size:0.75rem;color:var(--text-3);background:var(--surface2);border-bottom:1px solid var(--border);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;}
+td{padding:0.9rem 1rem;font-size:0.88rem;border-bottom:1px solid var(--border);color:var(--text-2);}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.page{display:none;}
+.page.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;width:100%;background:var(--bg);}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:3rem;max-width:400px;width:100%;}
+.login-title{font-size:1.5rem;font-weight:700;color:var(--green);margin-bottom:2rem;text-align:center;}
+.form-group{margin-bottom:1.5rem;}
+.form-label{display:block;margin-bottom:0.5rem;color:var(--text-3);font-size:0.85rem;font-weight:500;}
+.form-input,.form-select,.form-textarea{width:100%;padding:0.75rem 1rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.9rem;font-family:'Noto Sans KR',sans-serif;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--green);}
+.form-textarea{min-height:80px;resize:vertical;}
+.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+.modal.active{display:flex;}
+.modal-content{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;}
+.modal-title{font-size:1.2rem;font-weight:700;color:var(--green);}
+.modal-close{background:var(--surface2);border:1px solid var(--border);width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-2);font-size:18px;}
+.modal-close:hover{background:var(--surface3);color:var(--text);}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:1.5rem;}
+.toast{position:fixed;top:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;z-index:9999;box-shadow:0 8px 30px rgba(0,0,0,0.4);animation:slideIn 0.3s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}
+.menu-card{background:var(--surface2);padding:1rem;border-radius:8px;border:1px solid var(--border);margin-bottom:1rem;}
+.menu-card:hover{border-color:rgba(74,222,128,0.3);}
+.menu-actions{display:flex;gap:0.5rem;margin-top:0.75rem;}
+.status{padding:0.75rem;border-radius:6px;margin:0.5rem 0;}
+.status.success{background:#065f46;color:#4ADE80;}
+.status.error{background:#7f1d1d;color:#fca5a5;}
+.status.info{background:#1e3a8a;color:#93c5fd;}
+.hidden{display:none!important;}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden;}
+.cal-header{background:var(--surface2);padding:0.5rem;text-align:center;font-size:0.75rem;font-weight:700;color:var(--text-3);}
+.cal-day{background:var(--surface);min-height:100px;padding:0.5rem;cursor:pointer;transition:background 0.2s;position:relative;}
+.cal-day:hover{background:var(--surface2);}
+.cal-day.other-month{background:rgba(15,17,23,0.6);opacity:0.5;}
+.cal-day.today{background:rgba(74,222,128,0.07);}
+.cal-day-num{font-size:0.85rem;font-weight:600;color:var(--text-2);margin-bottom:0.5rem;}
+.cal-meal{font-size:0.7rem;padding:0.2rem 0.4rem;border-radius:4px;margin-bottom:2px;background:rgba(96,165,250,0.12);color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.cal-meal.dinner{background:rgba(167,139,250,0.12);color:var(--purple);}
+.summary-box{background:var(--surface3);padding:1rem;border-radius:8px;margin-bottom:1rem;border-left:4px solid var(--green);}
+@media print{
+  body{background:#fff;color:#000;}
+  .no-print,.sidebar,.topbar,.btn,#todayOrdersContent,.stats-grid{display:none!important;}
+  .main{margin-left:0;}
+  .card{border:1px solid #000;page-break-inside:avoid;}
+  table{border:1px solid #000;}
+  th,td{border:1px solid #000;color:#000;}
+  #prepListContent{display:block!important;}
+}
+</style>
+</head>
+<body>
+<div id="loginPage" class="login-page">
+<div class="login-card">
+<div class="login-title">🍱 건밀그린 매니저 BETA</div>
+<form onsubmit="handleLogin(event)">
+<div class="form-group">
+<label class="form-label">아이디</label>
+<input type="text" id="loginId" class="form-input" required>
+</div>
+<div class="form-group">
+<label class="form-label">비밀번호</label>
+<input type="password" id="loginPw" class="form-input" required>
+</div>
+<button type="submit" class="btn btn-primary" style="width:100%;">로그인</button>
+</form>
+<div id="loginStatus"></div>
+</div>
+</div>
+<div id="mainApp" class="hidden">
+<div class="sidebar">
+<div class="sidebar-brand">
+<div class="logo">건밀그린</div>
+<div class="subtitle">Manager BETA v1.0</div>
+</div>
+<nav class="nav">
+<div class="nav-section">메뉴</div>
+<div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span><span>대시보드</span></div>
+<div class="nav-item" onclick="showPage('orders')"><span class="nav-icon">📦</span><span>주문 관리</span></div>
+<div class="nav-item" onclick="showPage('customers')"><span class="nav-icon">👥</span><span>고객 관리</span></div>
+<div class="nav-section">서비스</div>
+<div class="nav-item" onclick="showPage('menus')"><span class="nav-icon">🍽️</span><span>메뉴 관리</span></div>
+<div class="nav-item" onclick="showPage('meals')"><span class="nav-icon">📅</span><span>식단 관리</span></div>
+<div class="nav-section">설정</div>
+<div class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span><span>로그아웃</span></div>
+</nav>
+</div>
+<div class="main">
+<div class="topbar no-print">
+<div class="topbar-title" id="pageTitle">대시보드</div>
+<div style="display:flex;align-items:center;gap:1rem">
+<span style="color:var(--text-3);font-size:0.85rem">관리자</span>
+<button class="logout-btn" onclick="logout()">로그아웃</button>
+</div>
+</div>
+<div class="content">
+<div id="dashboardPage" class="page active">
+<div class="stats-grid">
+<div class="stat-card green">
+<div class="stat-label">오늘 주문</div>
+<div class="stat-value" id="statTodayOrders">-</div>
+<div class="stat-sub">결제완료 <span id="statTodayPaid">-</span></div>
+</div>
+<div class="stat-card amber">
+<div class="stat-label">오늘 매출</div>
+<div class="stat-value" id="statTodayRevenue">-</div>
+<div class="stat-sub">목표 <span id="statTodayGoal">85%</span></div>
+</div>
+<div class="stat-card blue">
+<div class="stat-label">이번 달 매출</div>
+<div class="stat-value" id="statMonthRevenue">-</div>
+<div class="stat-sub">전월 대비 <span id="statMonthChange">+12%</span></div>
+</div>
+<div class="stat-card purple">
+<div class="stat-label">총 고객</div>
+<div class="stat-value" id="statTotalCustomers">-</div>
+<div class="stat-sub">활성 <span id="statActiveCustomers">-</span></div>
+</div>
+</div>
+<div class="card">
+<div class="card-header">
+<div class="card-title">📦 오늘의 주문</div>
+<button class="btn btn-secondary" onclick="loadTodayOrders()">🔄 새로고침</button>
+</div>
+<div id="todayOrdersContent">로딩 중...</div>
+</div>
+<div class="card">
+<div class="card-header">
+<div class="card-title">🍱 준비 리스트 (결제완료만)</div>
+<div style="display:flex;gap:0.5rem;align-items:center">
+<input type="date" id="prepDate" class="form-input" style="width:auto" onchange="loadPrepList()">
+<button class="btn btn-primary no-print" onclick="printPrepList()">🖨️ 인쇄</button>
+<button class="btn btn-secondary no-print" onclick="loadPrepList()">🔄 새로고침</button>
+</div>
+</div>
+<div id="prepListContent">로딩 중...</div>
+</div>
+</div>
+<div id="ordersPage" class="page">
+<div class="card">
+<div class="card-header">
+<div class="card-title">전체 주문 내역</div>
+<button class="btn btn-secondary" onclick="loadAllOrders()">🔄 새로고침</button>
+</div>
+<div id="allOrdersContent">로딩 중...</div>
+</div>
+</div>
+<div id="customersPage" class="page">
+<div class="card">
+<div class="card-header">
+<div class="card-title">고객 목록</div>
+<button class="btn btn-secondary" onclick="loadCustomers()">🔄 새로고침</button>
+</div>
+<div id="customersContent">로딩 중...</div>
+</div>
+</div>
+<div id="menusPage" class="page">
+<div class="card">
+<div class="card-header">
+<div class="card-title">메뉴 목록</div>
+<div>
+<button class="btn btn-primary" onclick="openMenuModal()">+ 메뉴 추가</button>
+<button class="btn btn-secondary" onclick="loadMenus()" style="margin-left:0.5rem">🔄 새로고침</button>
+</div>
+</div>
+<div id="menusContent">로딩 중...</div>
+</div>
+</div>
+<div id="mealsPage" class="page">
+<div class="card">
+<div class="card-header">
+<div class="card-title">식단 캘린더</div>
+<div style="display:flex;gap:0.5rem;align-items:center">
+<button class="btn btn-secondary" onclick="prevMonth()">◀</button>
+<div id="currentMonth" style="min-width:150px;text-align:center;font-size:1.1rem;font-weight:700"></div>
+<button class="btn btn-secondary" onclick="nextMonth()">▶</button>
+<button class="btn btn-primary" onclick="openMealModal()" style="margin-left:1rem">+ 식단 추가</button>
+<button class="btn btn-secondary" onclick="printMealCalendar()">🖨️ 인쇄</button>
+</div>
+</div>
+<div id="mealsCalendar"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="menuModal" class="modal">
+<div class="modal-content">
+<div class="modal-header">
+<div class="modal-title" id="menuModalTitle">메뉴 추가</div>
+<div class="modal-close" onclick="closeMenuModal()">✕</div>
+</div>
+<div class="form-group">
+<label class="form-label">메뉴 코드 *</label>
+<input type="text" id="menuCode" class="form-input" placeholder="M011" maxlength="10">
+</div>
+<div class="form-group">
+<label class="form-label">메뉴명 *</label>
+<input type="text" id="menuName" class="form-input" placeholder="연어 샐러드">
+</div>
+<div class="form-group">
+<label class="form-label">재료/설명</label>
+<textarea id="menuDesc" class="form-textarea" placeholder="신선한 연어, 아보카도"></textarea>
+</div>
+<div class="form-group">
+<label class="form-label">칼로리</label>
+<input type="number" id="menuCalorie" class="form-input" placeholder="450">
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="closeMenuModal()">취소</button>
+<button class="btn btn-primary" onclick="saveMenu()">저장</button>
+</div>
+</div>
+</div>
+<div id="mealModal" class="modal">
+<div class="modal-content">
+<div class="modal-header">
+<div class="modal-title" id="mealModalTitle">식단 추가</div>
+<div class="modal-close" onclick="closeMealModal()">✕</div>
+</div>
+<input type="hidden" id="editingMealId">
+<div class="form-group">
+<label class="form-label">날짜 *</label>
+<input type="date" id="mealDate" class="form-input">
+</div>
+<div class="form-group">
+<label class="form-label">시간 *</label>
+<select id="mealTime" class="form-select">
+<option value="아침">아침</option>
+<option value="점심" selected>점심</option>
+<option value="저녁">저녁</option>
+</select>
+</div>
+<div class="form-group">
+<label class="form-label">메뉴 선택</label>
+<select id="mealMenuSelect" class="form-select" onchange="fillMealFromMenu()">
+<option value="">직접 입력</option>
+</select>
+</div>
+<div class="form-group">
+<label class="form-label">메뉴명 *</label>
+<input type="text" id="mealName" class="form-input" placeholder="치폴레 보울">
+</div>
+<div class="form-group">
+<label class="form-label">설명</label>
+<textarea id="mealDesc" class="form-textarea" placeholder="닭가슴살, 퀴노아..."></textarea>
+</div>
+<div class="form-group">
+<label class="form-label">칼로리</label>
+<input type="number" id="mealCalorie" class="form-input" placeholder="520">
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="closeMealModal()">취소</button>
+<button class="btn btn-danger" onclick="deleteMeal()" id="deleteMealBtn" style="display:none;margin-right:auto">삭제</button>
+<button class="btn btn-primary" onclick="saveMeal()">저장</button>
+</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+let supabaseClient=null,isLoggedIn=false,currentMenus=[],editingMenuCode=null,currentMealDate=new Date(),allMealsData=[];
+const MANAGER_ID='kmeal_manager',MANAGER_PW='green2024!';
+window.addEventListener('load',()=>{
+  console.log('=== 매니저 BETA v1.0 ===');
+  initSupabase();
+  document.getElementById('prepDate').value=new Date().toISOString().split('T')[0];
+});
+function initSupabase(){
+  try{
+    if(typeof window.supabase==='undefined')throw new Error('Supabase CDN 실패');
+    const URL='https://tuxsyxywdeecdflgyuib.supabase.co';
+    const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eHN5eHl3ZGVlY2RmbGd5dWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzY0NzQsImV4cCI6MjA4NzI1MjQ3NH0.M5JNFHBTiPK5zv3DwBieKn5f8oRdmmRKZO99o0-tUWk';
+    supabaseClient=window.supabase.createClient(URL,KEY);
+    console.log('✅ Supabase 연결');
+  }catch(e){console.error('❌ Supabase 실패:',e);}
+}
+function handleLogin(e){
+  e.preventDefault();
+  const id=document.getElementById('loginId').value,pw=document.getElementById('loginPw').value;
+  if(id===MANAGER_ID&&pw===MANAGER_PW){
+    isLoggedIn=true;
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    console.log('✅ 로그인');
+    loadDashboard();
+  }else document.getElementById('loginStatus').innerHTML='<div class="status error">❌ 로그인 실패</div>';
+}
+function logout(){
+  isLoggedIn=false;
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('loginId').value='';
+  document.getElementById('loginPw').value='';
+}
+function showPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  const pages={
+    dashboard:{e:'dashboardPage',t:'대시보드',l:loadDashboard},
+    orders:{e:'ordersPage',t:'주문 관리',l:loadAllOrders},
+    customers:{e:'customersPage',t:'고객 관리',l:loadCustomers},
+    menus:{e:'menusPage',t:'메뉴 관리',l:loadMenus},
+    meals:{e:'mealsPage',t:'식단 관리',l:loadMealsCalendar}
+  };
+  const pg=pages[p];
+  if(pg){
+    document.getElementById(pg.e).classList.add('active');
+    document.getElementById('pageTitle').textContent=pg.t;
+    event.target.closest('.nav-item')?.classList.add('active');
+    if(pg.l)pg.l();
+  }
+}
+async function loadDashboard(){
+  loadDashboardStats();
+  loadTodayOrders();
+  loadPrepList();
+}
+async function loadDashboardStats(){
+  try{
+    if(!supabaseClient)return;
+    const{data:orders}=await supabaseClient.from('orders').select('*');
+    const today=new Date().toISOString().split('T')[0],thisMonth=new Date().toISOString().substring(0,7);
+    const todayOrders=orders.filter(o=>o.start_date===today),thisMonthOrders=orders.filter(o=>o.start_date?.startsWith(thisMonth)),todayPaid=todayOrders.filter(o=>o.status==='결제완료');
+    const todayRev=todayOrders.filter(o=>o.status!=='취소').reduce((s,o)=>s+(o.total_price||0),0),monthRev=thisMonthOrders.filter(o=>o.status!=='취소').reduce((s,o)=>s+(o.total_price||0),0);
+    document.getElementById('statTodayOrders').textContent=todayOrders.length;
+    document.getElementById('statTodayPaid').textContent=todayPaid.length+'건';
+    document.getElementById('statTodayRevenue').textContent=(todayRev/10000).toFixed(1)+'만원';
+    document.getElementById('statMonthRevenue').textContent=(monthRev/10000).toFixed(1)+'만원';
+    const{data:users}=await supabaseClient.from('users').select('*');
+    document.getElementById('statTotalCustomers').textContent=users?.length||0;
+    document.getElementById('statActiveCustomers').textContent=users?.length||0;
+  }catch(e){console.error('❌ 통계 실패:',e);}
+}
+async function loadTodayOrders(){
+  const el=document.getElementById('todayOrdersContent');
+  try{
+    el.innerHTML='<div class="status">⏳ 로딩...</div>';
+    if(!supabaseClient)throw new Error('연결 안 됨');
+    const today=new Date().toISOString().split('T')[0];
+    const{data,error}=await supabaseClient.from('orders').select('*').eq('start_date',today).order('created_at',{ascending:false});
+    if(error)throw error;
+    if(data.length===0){el.innerHTML='<div class="status info">오늘 주문 없음</div>';return;}
+    let html='<table><thead><tr><th>ID</th><th>고객명</th><th>플랜</th><th>금액</th><th>상태</th></tr></thead><tbody>';
+    data.forEach(o=>{html+=`<tr><td>#${o.id}</td><td>${o.name||o.user_id}</td><td>${o.plan}</td><td>${(o.total_price||0).toLocaleString()}원</td><td>${o.status}</td></tr>`;});
+    html+='</tbody></table>';
+    el.innerHTML=html;
+  }catch(e){console.error('❌ 실패:',e);el.innerHTML=`<div class="status error">❌ ${e.message}</div>`;}
+}
+async function loadPrepList(){
+  const el=document.getElementById('prepListContent');
+  try{
+    el.innerHTML='<div class="status">⏳ 로딩...</div>';
+    if(!supabaseClient)throw new Error('연결 안 됨');
+    const selectedDate=document.getElementById('prepDate').value;
+    const{data:orders,error:oErr}=await supabaseClient.from('orders').select('*').eq('status','결제완료').order('time',{ascending:true});
+    if(oErr)throw oErr;
+    if(!orders||orders.length===0){el.innerHTML='<div class="status info">결제완료 주문 없음</div>';return;}
+    const todayOrders=orders.filter(order=>order.start_date===selectedDate);
+    if(todayOrders.length===0){el.innerHTML='<div class="status info">선택한 날짜에 준비할 주문 없음</div>';return;}
+    const{data:meals}=await supabaseClient.from('meals').select('*').eq('meal_date',selectedDate);
+    const mealsByTime={};
+    if(meals){meals.forEach(m=>{if(!mealsByTime[m.time])mealsByTime[m.time]={};mealsByTime[m.time]=m;});}
+    const grouped={};
+    todayOrders.forEach(order=>{
+      const time=order.time||'시간미정';
+      const pickup=order.pickup_type||'배달';
+      const menu=order.plan||'메뉴미정';
+      if(!grouped[time])grouped[time]={};
+      if(!grouped[time][pickup])grouped[time][pickup]={};
+      if(!grouped[time][pickup][menu])grouped[time][pickup][menu]=[];
+      grouped[time][pickup][menu].push(order);
+    });
+    let totalOrders=todayOrders.length;
+    let menuSummary={};
+    todayOrders.forEach(o=>{
+      const menu=o.plan||'메뉴미정';
+      menuSummary[menu]=(menuSummary[menu]||0)+1;
+    });
+    let html=`<div class="summary-box">
+      <h2 style="color:var(--green);margin-bottom:10px;">📅 ${selectedDate} 준비 리스트</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+        <div><strong>총 주문:</strong> ${totalOrders}건</div>
+        <div><strong>점심 식단:</strong> ${mealsByTime['점심']?mealsByTime['점심'].name:'미정'}</div>
+        <div><strong>저녁 식단:</strong> ${mealsByTime['저녁']?mealsByTime['저녁'].name:'미정'}</div>
+      </div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <strong>메뉴별 합계:</strong><br>
+        ${Object.entries(menuSummary).map(([m,c])=>`${m}: <strong>${c}개</strong>`).join(' | ')}
+      </div>
+    </div>`;
+    Object.keys(grouped).sort().forEach(time=>{
+      const lunchMeal=mealsByTime['점심'];
+      const dinnerMeal=mealsByTime['저녁'];
+      html+=`<h3 style="color:var(--amber);margin-top:30px;margin-bottom:15px;">⏰ ${time}</h3>`;
+      Object.keys(grouped[time]).forEach(pickup=>{
+        const pickupIcon=pickup==='배달'?'🚚':pickup==='픽업'?'🏃':'🍽️';
+        html+=`<h4 style="color:var(--blue);margin-top:20px;margin-bottom:10px;">${pickupIcon} ${pickup}</h4>`;
+        Object.keys(grouped[time][pickup]).forEach(menu=>{
+          const orders=grouped[time][pickup][menu];
+          html+=`<div style="background:var(--surface2);padding:15px;border-radius:8px;margin-bottom:15px;">`;
+          html+=`<div style="font-size:16px;font-weight:700;color:var(--green);margin-bottom:10px;">🍱 ${menu} x${orders.length}개</div>`;
+          orders.forEach(order=>{
+            html+=`<div style="padding:10px;border-left:3px solid var(--border);margin-bottom:8px;margin-left:20px;">`;
+            html+=`<div style="font-weight:600;">${order.name} (${order.phone})</div>`;
+            const timeHour=parseInt(time.split(':')[0]);
+            const isLunch=timeHour>=11&&timeHour<=13;
+            const isDinner=timeHour>=17&&timeHour<=19;
+            if(isLunch&&lunchMeal)html+=`<div style="color:var(--blue);font-size:13px;">🍱 점심: ${lunchMeal.name}</div>`;
+            if(isDinner&&dinnerMeal)html+=`<div style="color:var(--purple);font-size:13px;">🍱 저녁: ${dinnerMeal.name}</div>`;
+            if(order.topping)html+=`<div style="color:var(--text-3);font-size:13px;">옵션: ${order.topping}</div>`;
+            if(order.special_request)html+=`<div style="color:var(--amber);font-size:13px;">특별요청: ${order.special_request}</div>`;
+            html+=`</div>`;
+          });
+          html+=`</div>`;
+        });
+      });
+    });
+    el.innerHTML=html;
+  }catch(e){console.error('❌ 실패:',e);el.innerHTML=`<div class="status error">❌ ${e.message}</div>`;}
+}
+async function loadAllOrders(){
+  const el=document.getElementById('allOrdersContent');
+  try{
+    el.innerHTML='<div class="status">⏳ 로딩...</div>';
+    if(!supabaseClient)throw new Error('연결 안 됨');
+    const{data,error}=await supabaseClient.from('orders').select('*').order('start_date',{ascending:false}).limit(100);
+    if(error)throw error;
+    if(data.length===0){el.innerHTML='<div class="status info">주문 없음</div>';return;}
+    let html='<table><thead><tr><th>ID</th><th>고객명</th><th>전화</th><th>시작일</th><th>플랜</th><th>픽업</th><th>요일</th><th>시간</th><th>금액</th><th>상태</th></tr></thead><tbody>';
+    data.forEach(o=>{
+      html+=`<tr><td>${o.id}</td><td>${o.name}</td><td>${o.phone}</td><td>${o.start_date}</td><td>${o.plan}</td><td>${o.pickup_type||'-'}</td><td>${o.days}</td><td>${o.time}</td><td>${(o.total_price||0).toLocaleString()}원</td><td><select onchange="changeOrderStatus(${o.id},this.value)" style="padding:4px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:4px;"><option value="입금대기"${o.status==='입금대기'?' selected':''}>입금대기</option><option value="결제확인중"${o.status==='결제확인중'?' selected':''}>결제확인중</option><option value="결제완료"${o.status==='결제완료'?' selected':''}>결제완료</option><option value="준비중"${o.status==='준비중'?' selected':''}>준비중</option><option value="완료"${o.status==='완료'?' selected':''}>완료</option><option value="취소"${o.status==='취소'?' selected':''}>취소</option></select></td></tr>`;
+    });
+    html+='</tbody></table>';
+    el.innerHTML=html;
+  }catch(e){console.error('❌ 실패:',e);el.innerHTML=`<div class="status error">❌ ${e.message}</div>`;}
+}
+async function changeOrderStatus(id,st){
+  try{
+    const{error}=await supabaseClient.from('orders').update({status:st}).eq('id',id);
+    if(error)throw error;
+    showToast(`✅ 주문 #${id} → ${st}`);
+    loadDashboardStats();
+  }catch(e){console.error('❌ 실패:',e);alert('실패: '+e.message);}
+}
+async function loadCustomers(){
+  const el=document.getElementById('customersContent');
+  try{
+    el.innerHTML='<div class="status">⏳ 로딩...</div>';
+    if(!supabaseClient)throw new Error('연결 안 됨');
+    const{data,error}=await supabaseClient.from('users').select('*').order('created_at',{ascending:false});
+    if(error)throw error;
+    if(data.length===0){el.innerHTML='<div class="status info">고객 없음</div>';return;}
+    let html='<table><thead><tr><th>ID</th><th>이름</th><th>이메일</th><th>전화</th><th>가입일</th><th>주문 내역</th></tr></thead><tbody>';
+    data.forEach(u=>{html+=`<tr><td>${u.user_id}</td><td>${u.name||'-'}</td><td>${u.email||'-'}</td><td>${u.phone||'-'}</td><td>${u.created_at?.split('T')[0]||'-'}</td><td><button class="btn btn-secondary" onclick="showCustomerOrders('${u.user_id}')" style="padding:0.4rem 0.8rem;font-size:0.8rem">📦 주문보기</button></td></tr>`;});
+    html+='</tbody></table>';
+    el.innerHTML=html;
+  }catch(e){console.error('❌ 실패:',e);el.innerHTML=`<div class="status error">❌ ${e.message}</div>`;}
+}
+async function showCustomerOrders(userId){
+  try{
+    const{data,error}=await supabaseClient.from('orders').select('*').eq('user_id',userId).order('start_date',{ascending:false});
+    if(error)throw error;
+    let html=`<div class="modal active"><div class="modal-content"><div class="modal-header"><div class="modal-title">${userId}님의 주문 내역</div><div class="modal-close" onclick="this.closest('.modal').remove()">✕</div></div>`;
+    if(!data||data.length===0){
+      html+=`<div class="status info">주문 내역 없음</div>`;
+    }else{
+      html+=`<table style="font-size:0.85rem"><thead><tr><th>날짜</th><th>플랜</th><th>픽업</th><th>금액</th><th>상태</th></tr></thead><tbody>`;
+      data.forEach(o=>{html+=`<tr><td>${o.start_date}</td><td>${o.plan}</td><td>${o.pickup_type||'-'}</td><td>${(o.total_price||0).toLocaleString()}원</td><td>${o.status}</td></tr>`;});
+      html+=`</tbody></table>`;
+    }
+    html+=`</div></div>`;
+    document.body.insertAdjacentHTML('beforeend',html);
+  }catch(e){console.error('❌:',e);alert('주문 내역 조회 실패');}
+}
+async function loadMenus(){
+  const el=document.getElementById('menusContent');
+  try{
+    el.innerHTML='<div class="status">⏳ 로딩...</div>';
+    if(!supabaseClient)throw new Error('연결 안 됨');
+    const{data,error}=await supabaseClient.from('menu_items').select('*').order('menu_code',{ascending:true});
+    if(error)throw error;
+    currentMenus=data;
+    updateMealMenuSelect();
+    if(data.length===0){el.innerHTML='<div class="status info">메뉴 없음</div>';return;}
+    let html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem">';
+    data.forEach(m=>{
+      html+=`<div class="menu-card"><div style="display:flex;justify-content:space-between;margin-bottom:0.5rem"><div><div style="color:var(--text-3);font-size:0.75rem">${m.menu_code}</div><div style="font-weight:700;font-size:1rem">${m.menu_name}</div></div><div style="background:rgba(74,222,128,0.15);color:var(--green);padding:0.25rem 0.75rem;border-radius:12px;font-size:0.75rem;font-weight:600">${m.calorie||0}kcal</div></div><div style="color:var(--text-3);font-size:0.85rem;margin-bottom:0.75rem">${m.description||'-'}</div><div class="menu-actions"><button class="btn btn-secondary" style="flex:1;padding:0.5rem;font-size:0.8rem" onclick="editMenu('${m.menu_code}')">수정</button><button class="btn btn-danger" style="flex:1;padding:0.5rem;font-size:0.8rem" onclick="deleteMenu('${m.menu_code}')">삭제</button></div></div>`;
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  }catch(e){console.error('❌ 실패:',e);el.innerHTML=`<div class="status error">❌ ${e.message}</div>`;}
+}
+function openMenuModal(){
+  editingMenuCode=null;
+  document.getElementById('menuModalTitle').textContent='메뉴 추가';
+  document.getElementById('menuCode').value='';
+  document.getElementById('menuCode').disabled=false;
+  document.getElementById('menuName').value='';
+  document.getElementById('menuDesc').value='';
+  document.getElementById('menuCalorie').value='';
+  document.getElementById('menuModal').classList.add('active');
+}
+function closeMenuModal(){document.getElementById('menuModal').classList.remove('active');}
+function editMenu(code){
+  const m=currentMenus.find(x=>x.menu_code===code);
+  if(!m)return;
+  editingMenuCode=code;
+  document.getElementById('menuModalTitle').textContent='메뉴 수정';
+  document.getElementById('menuCode').value=m.menu_code;
+  document.getElementById('menuCode').disabled=true;
+  document.getElementById('menuName').value=m.menu_name;
+  document.getElementById('menuDesc').value=m.description||'';
+  document.getElementById('menuCalorie').value=m.calorie||'';
+  document.getElementById('menuModal').classList.add('active');
+}
+async function saveMenu(){
+  try{
+    const code=document.getElementById('menuCode').value.trim(),name=document.getElementById('menuName').value.trim(),desc=document.getElementById('menuDesc').value.trim(),cal=document.getElementById('menuCalorie').value;
+    if(!code||!name){alert('코드와 메뉴명 필수');return;}
+    const data={menu_code:code,menu_name:name,description:desc,calorie:cal?parseInt(cal):null};
+    if(editingMenuCode){
+      const{error}=await supabaseClient.from('menu_items').update(data).eq('menu_code',editingMenuCode);
+      if(error)throw error;
+      showToast('✅ 메뉴 수정');
+    }else{
+      const{error}=await supabaseClient.from('menu_items').insert([data]);
+      if(error)throw error;
+      showToast('✅ 메뉴 추가');
+    }
+    closeMenuModal();
+    loadMenus();
+  }catch(e){console.error('❌ 실패:',e);alert('실패: '+e.message);}
+}
+async function deleteMenu(code){
+  if(!confirm(`메뉴 ${code} 삭제?`))return;
+  try{
+    const{error}=await supabaseClient.from('menu_items').delete().eq('menu_code',code);
+    if(error)throw error;
+    showToast('✅ 메뉴 삭제');
+    loadMenus();
+  }catch(e){console.error('❌ 실패:',e);alert('실패: '+e.message);}
+}
+async function loadMealsCalendar(){
+  const y=currentMealDate.getFullYear(),m=currentMealDate.getMonth();
+  document.getElementById('currentMonth').textContent=`${y}년 ${m+1}월`;
+  const{data,error}=await supabaseClient.from('meals').select('*').gte('meal_date',`${y}-${String(m+1).padStart(2,'0')}-01`).lt('meal_date',`${m===11?y+1:y}-${String(m===11?1:m+2).padStart(2,'0')}-01`);
+  if(error){console.error(error);return;}
+  allMealsData=data||[];
+  renderCalendar();
+}
+function renderCalendar(){
+  const y=currentMealDate.getFullYear(),m=currentMealDate.getMonth();
+  const first=new Date(y,m,1),last=new Date(y,m+1,0);
+  const startDay=first.getDay(),days=last.getDate();
+  let html='<div class="calendar">';
+  ['일','월','화','수','목','금','토'].forEach(d=>html+=`<div class="cal-header">${d}</div>`);
+  for(let i=0;i<startDay;i++)html+='<div class="cal-day other-month"></div>';
+  const today=new Date().toISOString().split('T')[0];
+  for(let d=1;d<=days;d++){
+    const date=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=date===today;
+    const meals=allMealsData.filter(x=>x.meal_date===date);
+    html+=`<div class="cal-day${isToday?' today':''}" onclick="openMealModalForDate('${date}')"><div class="cal-day-num">${d}</div>`;
+    meals.forEach(ml=>{
+      const cls=ml.time==='저녁'?'cal-meal dinner':'cal-meal';
+      html+=`<div class="${cls}" onclick="event.stopPropagation();editMeal(${ml.id})">${ml.time} ${ml.name}</div>`;
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+  document.getElementById('mealsCalendar').innerHTML=html;
+}
+function prevMonth(){currentMealDate.setMonth(currentMealDate.getMonth()-1);loadMealsCalendar();}
+function nextMonth(){currentMealDate.setMonth(currentMealDate.getMonth()+1);loadMealsCalendar();}
+
+// 식단 캘린더 인쇄
+function printMealCalendar(){
+  window.print();
+}
+
+function openMealModal(date){
+  document.getElementById('editingMealId').value='';
+  document.getElementById('mealModalTitle').textContent='식단 추가';
+  document.getElementById('mealDate').value=date||new Date().toISOString().split('T')[0];
+  document.getElementById('mealTime').value='점심';
+  document.getElementById('mealMenuSelect').value='';
+  document.getElementById('mealName').value='';
+  document.getElementById('mealDesc').value='';
+  document.getElementById('mealCalorie').value='';
+  document.getElementById('deleteMealBtn').style.display='none';
+  document.getElementById('mealModal').classList.add('active');
+}
+function openMealModalForDate(date){openMealModal(date);}
+function closeMealModal(){document.getElementById('mealModal').classList.remove('active');}
+function updateMealMenuSelect(){
+  const sel=document.getElementById('mealMenuSelect');
+  let html='<option value="">직접 입력</option>';
+  currentMenus.forEach(m=>{html+=`<option value="${m.menu_code}">${m.menu_code} - ${m.menu_name}</option>`;});
+  sel.innerHTML=html;
+}
+function fillMealFromMenu(){
+  const code=document.getElementById('mealMenuSelect').value;
+  if(!code){
+    document.getElementById('mealName').value='';
+    document.getElementById('mealDesc').value='';
+    document.getElementById('mealCalorie').value='';
+    return;
+  }
+  const m=currentMenus.find(x=>x.menu_code===code);
+  if(m){
+    document.getElementById('mealName').value=m.menu_name;
+    document.getElementById('mealDesc').value=m.description||'';
+    document.getElementById('mealCalorie').value=m.calorie||'';
+  }
+}
+function editMeal(id){
+  const meal=allMealsData.find(m=>m.id===id);
+  if(!meal)return;
+  document.getElementById('editingMealId').value=id;
+  document.getElementById('mealModalTitle').textContent='식단 수정';
+  document.getElementById('mealDate').value=meal.meal_date;
+  document.getElementById('mealTime').value=meal.time;
+  document.getElementById('mealMenuSelect').value=meal.menu_code||'';
+  document.getElementById('mealName').value=meal.name;
+  document.getElementById('mealDesc').value=meal.description||'';
+  document.getElementById('mealCalorie').value=meal.calorie||'';
+  document.getElementById('deleteMealBtn').style.display='block';
+  document.getElementById('mealModal').classList.add('active');
+}
+async function saveMeal(){
+  try{
+    const id=document.getElementById('editingMealId').value;
+    const date=document.getElementById('mealDate').value,time=document.getElementById('mealTime').value,code=document.getElementById('mealMenuSelect').value,name=document.getElementById('mealName').value.trim(),desc=document.getElementById('mealDesc').value.trim(),cal=document.getElementById('mealCalorie').value;
+    if(!date||!time||!name){alert('날짜,시간,메뉴명 필수');return;}
+    const data={meal_date:date,time:time,menu_code:code||null,name:name,description:desc,calorie:cal?parseInt(cal):null};
+    if(id){
+      const{error}=await supabaseClient.from('meals').update(data).eq('id',id);
+      if(error)throw error;
+      showToast('✅ 식단 수정');
+    }else{
+      const{error}=await supabaseClient.from('meals').insert([data]);
+      if(error)throw error;
+      showToast('✅ 식단 추가');
+    }
+    closeMealModal();
+    loadMealsCalendar();
+  }catch(e){console.error('❌ 실패:',e);alert('실패: '+e.message);}
+}
+async function deleteMeal(){
+  const id=document.getElementById('editingMealId').value;
+  if(!id)return;
+  if(!confirm('이 식단을 삭제하시겠습니까?'))return;
+  try{
+    const{error}=await supabaseClient.from('meals').delete().eq('id',id);
+    if(error)throw error;
+    showToast('✅ 식단 삭제');
+    closeMealModal();
+    loadMealsCalendar();
+  }catch(e){console.error('❌ 실패:',e);alert('실패: '+e.message);}
+}
+function showToast(msg){
+  const t=document.createElement('div');
+  t.className='toast';
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+function printPrepList(){
+  const content=document.getElementById('prepListContent').innerHTML;
+  const date=document.getElementById('prepDate').value;
+  const printWin=window.open('','','width=800,height=600');
+  printWin.document.write(`
+    <html><head><title>준비 리스트 - ${date}</title>
+    <style>
+      body{font-family:'Noto Sans KR',sans-serif;padding:20px;color:#000;}
+      h2,h3,h4{margin:10px 0;}
+      table{width:100%;border-collapse:collapse;margin:10px 0;}
+      th,td{border:1px solid #000;padding:8px;text-align:left;}
+      th{background:#f0f0f0;}
+      .summary-box{border:2px solid #4ADE80;padding:15px;margin-bottom:20px;border-radius:8px;}
+    </style></head><body>${content}</body></html>
+  `);
+  printWin.document.close();
+  printWin.focus();
+  setTimeout(()=>{printWin.print();printWin.close();},250);
+}
+</script>
+</body>
+</html>

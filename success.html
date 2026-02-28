@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>결제 완료 - 건밀그린</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #E8F5E9 0%, #FFF8E7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 3rem 2.5rem;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .icon { font-size: 5rem; margin-bottom: 1.5rem; animation: bounceIn 0.6s ease-out; }
+        @keyframes bounceIn {
+            0%   { transform: scale(0); opacity: 0; }
+            60%  { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        h1 { color: #2D5016; font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .subtitle { color: #757575; margin-bottom: 2rem; line-height: 1.7; }
+        .info-box {
+            background: #F5F5F5;
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            font-size: 0.95rem;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: #757575; flex-shrink: 0; margin-right: 1rem; }
+        .info-row .value { font-weight: 600; text-align: right; }
+        .amount-box {
+            background: linear-gradient(135deg, #E8F5E9, #FFF8E7);
+            border: 2px solid #7CB342;
+            border-radius: 16px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .amount-label { font-size: 0.9rem; color: #757575; margin-bottom: 0.3rem; }
+        .amount-value { font-size: 2rem; font-weight: 700; color: #2D5016; }
+        .btn-home {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #7CB342, #2D5016);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            font-family: 'Noto Sans KR', sans-serif;
+            transition: all 0.3s;
+        }
+        .btn-home:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(45,80,22,0.3); }
+        .loading { color: #757575; font-size: 1rem; padding: 2rem 0; }
+        .error-msg { color: #F44336; font-size: 0.9rem; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div id="loadingView" class="loading">⏳ 결제를 확인하는 중...</div>
+    <div id="successView" style="display:none;">
+        <div class="icon">🎉</div>
+        <h1>결제 완료!</h1>
+        <p class="subtitle">건밀그린 구독이 시작되었습니다.<br>카카오톡 또는 이메일로 확인 메시지를 보내드립니다.</p>
+        <div class="amount-box">
+            <div class="amount-label">결제 금액</div>
+            <div class="amount-value" id="displayAmount">-</div>
+        </div>
+        <div class="info-box" id="orderInfoBox"></div>
+        <a href="https://kmealgreen.vercel.app/" class="btn-home">🏠 홈으로 돌아가기</a>
+    </div>
+    <div id="errorView" style="display:none;">
+        <div class="icon">😢</div>
+        <h1 style="color:#F44336;">결제 확인 실패</h1>
+        <p class="subtitle">결제는 완료됐지만 확인 중 오류가 발생했습니다.<br>카카오톡으로 문의해 주세요.</p>
+        <p class="error-msg" id="errorMsg"></p>
+        <a href="https://kmealgreen.vercel.app/" class="btn-home" style="margin-top:1.5rem;">🏠 홈으로 돌아가기</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://tuxsyxywdeecdflgyuib.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1eHN5eHl3ZGVlY2RmbGd5dWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzY0NzQsImV4cCI6MjA4NzI1MjQ3NH0.M5JNFHBTiPK5zv3DwBieKn5f8oRdmmRKZO99o0-tUWk';
+const TOSS_SECRET_KEY = 'REPLACE_WITH_YOUR_SECRET_KEY'; // ⚠️ 실제 배포 전 반드시 변경!
+
+window.addEventListener('load', async () => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentKey = params.get('paymentKey');
+    const orderId    = params.get('orderId');
+    const amount     = params.get('amount');
+
+    if (!paymentKey || !orderId || !amount) {
+        showError('결제 정보가 올바르지 않습니다.');
+        return;
+    }
+
+    try {
+        // ── 토스페이먼츠 결제 승인 ──────────────────────────────────────
+        // ⚠️ 시크릿 키가 노출되지 않도록 실제 서비스에서는
+        //    Vercel Serverless Function 또는 Supabase Edge Function으로 이동 필요
+        //    지금은 테스트용으로 클라이언트에서 직접 호출
+        const confirmRes = await fetch('https://api.tosspayments.com/v1/payments/confirm', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + btoa(TOSS_SECRET_KEY + 'test_sk_AQ92ymxN34Yloa9j4ANPVajRKXvd:'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ paymentKey, orderId, amount: parseInt(amount) })
+        });
+
+        const confirmData = await confirmRes.json();
+
+        if (!confirmRes.ok) {
+            throw new Error(confirmData.message || '결제 승인 실패');
+        }
+
+        // ── Supabase 주문 상태 업데이트 ────────────────────────────────
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const { error: dbError } = await db
+            .from('orders')
+            .update({
+                status: '결제완료',
+                toss_payment_key: paymentKey,
+                toss_method: confirmData.method || ''
+            })
+            .eq('toss_order_id', orderId);
+
+        if (dbError) console.error('DB 업데이트 오류:', dbError);
+
+        // ── 화면 표시 ───────────────────────────────────────────────────
+        const saved = JSON.parse(sessionStorage.getItem('kmealPendingOrder') || '{}');
+        sessionStorage.removeItem('kmealPendingOrder');
+
+        document.getElementById('displayAmount').textContent = parseInt(amount).toLocaleString() + '원';
+
+        document.getElementById('orderInfoBox').innerHTML = `
+            ${saved.plan ? `<div class="info-row"><span class="label">플랜</span><span class="value">${saved.plan.name} (${saved.plan.count}회)</span></div>` : ''}
+            ${saved.pickupType ? `<div class="info-row"><span class="label">픽업 방식</span><span class="value">${saved.pickupType}</span></div>` : ''}
+            ${saved.startDate ? `<div class="info-row"><span class="label">시작일</span><span class="value">${saved.startDate}</span></div>` : ''}
+            ${saved.days ? `<div class="info-row"><span class="label">요일</span><span class="value">${saved.days}</span></div>` : ''}
+            <div class="info-row"><span class="label">결제 수단</span><span class="value">${confirmData.method || saved.method || '-'}</span></div>
+            <div class="info-row"><span class="label">주문 번호</span><span class="value" style="font-size:0.8rem;color:#9E9E9E;">${orderId}</span></div>
+        `;
+
+        document.getElementById('loadingView').style.display = 'none';
+        document.getElementById('successView').style.display = 'block';
+
+    } catch(err) {
+        console.error('결제 확인 오류:', err);
+        showError(err.message);
+    }
+});
+
+function showError(msg) {
+    document.getElementById('loadingView').style.display = 'none';
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('errorView').style.display = 'block';
+}
+</script>
+</body>
+</html>
